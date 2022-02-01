@@ -49,7 +49,23 @@ foreach(APP ${APPLICATIONS})
 endforeach()
 list(JOIN PROGRAM_LIST "," PROGRAMS)
 
-# Benchmark
+# Benchmark of all applications
 find_program(HYPERFINE_EXE name hyperfine REQUIRED)
-add_custom_target(benchmark COMMAND ${HYPERFINE_EXE} --warmup 1 -L program ${PROGRAMS} './{program} large.dat < large.dat'
-    USES_TERMINAL)
+add_custom_target(benchmark
+    COMMAND ${HYPERFINE_EXE} --warmup 1 -L program ${PROGRAMS} './{program} large.dat < large.dat'
+    DEPENDS ${PROGRAM_LIST})
+
+# Benchmark of all applications output markdown
+find_program(HYPERFINE_EXE name hyperfine REQUIRED)
+add_custom_target(benchmark-markdown
+    COMMAND ${HYPERFINE_EXE} --warmup 1 --export-markdown benchmark.md -L program ${PROGRAMS} './{program} large.dat < large.dat'
+    DEPENDS ${PROGRAM_LIST})
+
+# Benchmark for each application, i.e., make benchmark-readcin
+foreach(APP ${APPLICATIONS})
+    get_filename_component(APPBASENAME "${APP}" NAME_WLE)
+    add_custom_target(benchmark-${APPBASENAME}
+        COMMAND ${HYPERFINE_EXE} --warmup 1 './${APPBASENAME} large.dat < large.dat'
+        DEPENDS ${APPBASENAME}
+    )
+endforeach()
